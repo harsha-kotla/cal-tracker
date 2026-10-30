@@ -16,6 +16,7 @@ export type Entry = Nutrition & {
   date: string;
   source: EntrySource;
   items: FoodItem[];
+  nutritionFilled: boolean;
   createdAt: Timestamp | null;
 };
 

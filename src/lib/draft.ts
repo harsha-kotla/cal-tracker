@@ -87,5 +87,6 @@ export function inputFromDraft(draft: Omit<LogDraft, "id" | "calories"> & { calo
     items: draft.items,
     calories: draft.calories,
     ...details,
+    nutritionFilled: draft.source === "photo" || NUTRITION_FIELDS.some((field) => details[field.key] > 0),
   };
 }

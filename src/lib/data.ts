@@ -12,7 +12,7 @@ import {
 import type { User } from "firebase/auth";
 import { getDb } from "@/lib/firebase";
 import { todayKey } from "@/lib/dates";
-import { nutritionFrom, type FoodItem } from "@/lib/nutrition";
+import { hasNutritionDetails, nutritionFrom, type FoodItem } from "@/lib/nutrition";
 import { isMeal, isSource, type Entry, type EntryInput } from "@/lib/types";
 
 function cleanText(value: unknown, max: number) {
@@ -46,6 +46,7 @@ function sanitize(input: EntryInput) {
     date: input.date,
     source: input.source === "photo" ? "photo" : "manual",
     items: (input.items ?? []).map(sanitizeItem).filter((item): item is FoodItem => item !== null).slice(0, 12),
+    nutritionFilled: input.nutritionFilled === true || hasNutritionDetails(nutrition),
     ...nutrition,
   };
 }
@@ -55,6 +56,7 @@ export function toEntry(snapshot: QueryDocumentSnapshot): Entry {
   const items = Array.isArray(data.items)
     ? data.items.map(sanitizeItem).filter((item): item is FoodItem => item !== null)
     : [];
+  const nutrition = nutritionFrom(data);
   return {
     id: snapshot.id,
     name: cleanText(data.name, 80),
@@ -64,8 +66,9 @@ export function toEntry(snapshot: QueryDocumentSnapshot): Entry {
     date: typeof data.date === "string" ? data.date : todayKey(),
     source: isSource(data.source) ? data.source : "manual",
     items,
+    nutritionFilled: data.nutritionFilled === true || hasNutritionDetails(nutrition),
     createdAt: data.createdAt && typeof data.createdAt.toMillis === "function" ? data.createdAt : null,
-    ...nutritionFrom(data),
+    ...nutrition,
   };
 }
 
@@ -89,6 +92,7 @@ export function entryToInput(entry: Entry): EntryInput {
     sodium: entry.sodium,
     cholesterol: entry.cholesterol,
     potassium: entry.potassium,
+    nutritionFilled: entry.nutritionFilled,
   };
 }
 

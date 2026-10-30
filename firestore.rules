@@ -40,5 +40,6 @@ function validEntry(data) {
     && data.note is string
     && data.note.size() <= 180
     && data.items is list
-    && data.items.size() <= 12;
+    && data.items.size() <= 12
+    && data.nutritionFilled is bool;
 }

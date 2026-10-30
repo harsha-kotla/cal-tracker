@@ -128,3 +128,50 @@ export function analysisFromModel(value: unknown): PlateAnalysis {
 export function nutritionFacts(entries: Nutrition[]) {
   return sumNutrition(entries);
 }
+
+export function hasNutritionDetails(nutrition: Nutrition) {
+  return NUTRITION_FIELDS.some((field) => nutrition[field.key] > 0);
+}
+
+export function needsNutritionFill(entry: Nutrition & { nutritionFilled?: boolean }) {
+  return entry.nutritionFilled !== true && !hasNutritionDetails(entry);
+}
+
+export type NutrientFill = {
+  id: string;
+  nutrition: Nutrition;
+};
+
+function asRecord(value: unknown) {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+}
+
+function rowsFrom(value: unknown) {
+  const record = asRecord(value);
+  const list = Array.isArray(value)
+    ? value
+    : [record?.foods, record?.items, record?.results].find(Array.isArray);
+  const source = Array.isArray(list) ? list : record ? [record] : [];
+  return source.flatMap((item) => {
+    const row = asRecord(item);
+    if (!row) return [];
+    const nested = asRecord(row.nutrition);
+    return [nested ? { ...nested, ...row } : row];
+  });
+}
+
+export function nutrientsFromModel(value: unknown, expected: { id: string; name: string }[]): NutrientFill[] {
+  const rows = rowsFrom(value);
+  const fills = expected.flatMap((food, index) => {
+    const named = rows.find((row) => {
+      const id = typeof row.id === "string" ? row.id.trim() : "";
+      const name = typeof row.name === "string" ? row.name.trim().toLowerCase() : "";
+      return id === food.id || (name !== "" && name === food.name.trim().toLowerCase());
+    });
+    const row = named ?? rows[index];
+    if (!row) return [];
+    return [{ id: food.id, nutrition: nutritionFrom(row) }];
+  });
+  if (!fills.length) throw new Error("The nutrient reading came back empty.");
+  return fills;
+}

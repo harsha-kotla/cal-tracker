@@ -85,6 +85,7 @@ export function recentFoods(entries: Entry[], limit = 8): RecentFood[] {
       sodium: entry.sodium,
       cholesterol: entry.cholesterol,
       potassium: entry.potassium,
+      nutritionFilled: entry.nutritionFilled,
     });
     if (foods.length >= limit) break;
   }

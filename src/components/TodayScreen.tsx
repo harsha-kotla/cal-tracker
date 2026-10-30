@@ -20,6 +20,7 @@ type TodayScreenProps = {
   onRemove: (entry: Entry) => void;
   onQuickAdd: (food: RecentFood) => void;
   onOpenSettings: () => void;
+  fillingNutrition: boolean;
 };
 
 export function TodayScreen({
@@ -36,6 +37,7 @@ export function TodayScreen({
   onRemove,
   onQuickAdd,
   onOpenSettings,
+  fillingNutrition,
 }: TodayScreenProps) {
   const summed = totals(entries);
   const grouped = groupByMeal(entries);
@@ -90,7 +92,9 @@ export function TodayScreen({
             <Macro label="Fat" value={summed.fat} />
           </div>
           <p className="mt-3 text-center text-[11px] tabular-nums text-cream/60">
-            Fiber {formatNumber(summed.fiber)}g · Sugar {formatNumber(summed.sugar)}g · Sodium {formatNumber(summed.sodium)}mg
+            {fillingNutrition
+              ? "Filling in protein and the other nutrients…"
+              : `Fiber ${formatNumber(summed.fiber)}g · Sugar ${formatNumber(summed.sugar)}g · Sodium ${formatNumber(summed.sodium)}mg`}
           </p>
         </section>
       )}

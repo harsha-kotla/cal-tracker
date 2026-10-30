@@ -7,6 +7,8 @@ import { createEntry, deleteEntry, entryToInput, updateEntry } from "@/lib/data"
 import { blankDraft, draftFromAnalysis, draftFromEntry, type LogDraft } from "@/lib/draft";
 import { friendlyError } from "@/lib/errors";
 import { compressPhoto } from "@/lib/image";
+import { needsNutritionFill } from "@/lib/nutrition";
+import { fillNutrients } from "@/lib/nutrients";
 import { loggedDates, loggingStreak, recentFoods } from "@/lib/stats";
 import type { Entry, EntryInput, Meal, RecentFood } from "@/lib/types";
 import { BottomNav, type Tab } from "@/components/BottomNav";
@@ -51,8 +53,10 @@ export function Tracker() {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [scanning, setScanning] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [skippedFills, setSkippedFills] = useState<string[]>([]);
   const toastTimer = useRef<number | null>(null);
   const quickLock = useRef(false);
+  const fillLock = useRef(false);
   const selectedDate = addDays(today, dayOffset);
 
   const dayEntries = useMemo(
@@ -62,12 +66,61 @@ export function Tracker() {
   const recent = useMemo(() => recentFoods(entries), [entries]);
   const streak = useMemo(() => loggingStreak(loggedDates(entries), today), [entries, today]);
   const banner = error ?? notice;
+  const fillingNutrition = dayEntries.some(
+    (entry) => needsNutritionFill(entry) && !skippedFills.includes(entry.id) && entry.id !== sheet?.id,
+  );
 
   useEffect(() => {
     return () => {
       if (toastTimer.current) window.clearTimeout(toastTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!user || loading || fillLock.current) return;
+    const missing = dayEntries.filter(
+      (entry) => needsNutritionFill(entry) && !skippedFills.includes(entry.id) && entry.id !== sheet?.id,
+    );
+    if (!missing.length) return;
+    fillLock.current = true;
+    const ids = missing.map((entry) => entry.id);
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const fills = await fillNutrients(
+          missing.map((entry) => ({
+            id: entry.id,
+            name: entry.name,
+            serving: entry.serving,
+            calories: entry.calories,
+          })),
+          token,
+        );
+        const byId = new Map(fills.map((fill) => [fill.id, fill.nutrition]));
+        await Promise.all(
+          missing.flatMap((entry) => {
+            const nutrition = byId.get(entry.id);
+            if (!nutrition) return [];
+            return [
+              updateEntry(user.uid, entry.id, {
+                ...entryToInput(entry),
+                ...nutrition,
+                calories: entry.calories > 0 ? entry.calories : nutrition.calories,
+                nutritionFilled: true,
+              }),
+            ];
+          }),
+        );
+        const missed = ids.filter((id) => !byId.has(id));
+        if (missed.length) setSkippedFills((current) => [...current, ...missed]);
+      } catch (err) {
+        setSkippedFills((current) => [...current, ...ids]);
+        showToast(err instanceof Error ? err.message : "Nutrients could not be updated.");
+      } finally {
+        fillLock.current = false;
+      }
+    })();
+  }, [dayEntries, loading, sheet?.id, skippedFills, user]);
 
   function showToast(message: string, onAction?: () => Promise<void> | void) {
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
@@ -189,6 +242,7 @@ export function Tracker() {
               }}
               onQuickAdd={(food) => void quickAdd(food)}
               onOpenSettings={() => setTab("settings")}
+              fillingNutrition={fillingNutrition}
             />
           ) : null}
           {tab === "history" ? (

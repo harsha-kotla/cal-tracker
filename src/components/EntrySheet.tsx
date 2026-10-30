@@ -203,6 +203,11 @@ export function EntrySheet({ initial, today, previewUrl, onClose, onSave, onDele
             </span>
           </label>
           {attempted && calories.trim() === "" ? <p className="mt-2 text-sm text-heat">Add the calories.</p> : null}
+          {initial.source === "manual" ? (
+            <p className="mt-3 text-sm leading-5 text-soft">
+              Leave protein and the rest blank. Cal estimates them from the name after you save.
+            </p>
+          ) : null}
 
           <div className="mt-5">
             <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">Meal</p>
