@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /entries/{entryId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create, update: if request.auth != null
+          && request.auth.uid == userId
+          && validEntry(request.resource.data);
+      }
+    }
+  }
+}
+
+function validEntry(data) {
+  return data.name is string
+    && data.name.size() > 0
+    && data.name.size() <= 80
+    && data.calories is number
+    && data.calories >= 0
+    && data.calories <= 20000
+    && data.protein is number
+    && data.carbs is number
+    && data.fat is number
+    && data.saturatedFat is number
+    && data.transFat is number
+    && data.fiber is number
+    && data.sugar is number
+    && data.sodium is number
+    && data.cholesterol is number
+    && data.potassium is number
+    && data.meal in ['breakfast', 'lunch', 'dinner', 'snack']
+    && data.date is string
+    && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+    && data.source in ['photo', 'manual']
+    && data.serving is string
+    && data.serving.size() <= 80
+    && data.note is string
+    && data.note.size() <= 180
+    && data.items is list
+    && data.items.size() <= 12;
+}
