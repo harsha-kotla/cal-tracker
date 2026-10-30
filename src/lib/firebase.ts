@@ -16,7 +16,7 @@ import {
   persistentMultipleTabManager,
   type Firestore,
 } from "firebase/firestore";
-import { firebaseConfig, isFirebaseConfigured } from "@/lib/config";
+import { firebaseConfig, isFirebaseConfigured, usesRedirectSignIn } from "@/lib/config";
 
 let auth: Auth | undefined;
 let db: Firestore | undefined;
@@ -52,12 +52,6 @@ export function getDb() {
   return db;
 }
 
-function prefersRedirect() {
-  const ua = navigator.userAgent;
-  if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
-  return navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-}
-
 export function consumeRedirectResult() {
   if (redirectStarted) return Promise.resolve(null);
   redirectStarted = true;
@@ -73,7 +67,7 @@ export async function signInWithGoogle() {
   }
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  if (prefersRedirect()) {
+  if (usesRedirectSignIn()) {
     await signInWithRedirect(firebaseAuth, provider);
     return;
   }

@@ -64,19 +64,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let unsubscribe = () => {};
     let cancelled = false;
+    let settled = false;
+    const finish = () => {
+      if (cancelled || settled) return;
+      settled = true;
+      setLoading(false);
+    };
     const auth = getFirebaseAuth();
     unsubscribe = onAuthStateChanged(auth, (next) => {
       if (cancelled) return;
       setUser(next);
-      setLoading(false);
-      if (next) setSigningIn(false);
+      if (next) {
+        setSigningIn(false);
+        finish();
+      }
     });
-    void consumeRedirectResult().catch((error) => {
-      if (cancelled) return;
-      const message = friendlyAuthError(error);
-      if (message) setAuthError(message);
-      setSigningIn(false);
-    });
+    void consumeRedirectResult()
+      .catch((error) => {
+        if (cancelled) return;
+        const message = friendlyAuthError(error);
+        if (message) setAuthError(message);
+        setSigningIn(false);
+      })
+      .finally(finish);
 
     return () => {
       cancelled = true;
