@@ -25,8 +25,7 @@ export function friendlyAuthError(error: unknown) {
     return null;
   }
   if (code === "auth/unauthorized-domain") {
-    const host = typeof window !== "undefined" ? window.location.hostname : "this site";
-    return `Add ${host} in Firebase Authentication, then Settings, then Authorized domains.`;
+    return "Add this site under Firebase Authentication, then Settings, then Authorized domains.";
   }
   if (code === "auth/popup-blocked") {
     return "The browser blocked the Google window. Allow popups and try again.";
