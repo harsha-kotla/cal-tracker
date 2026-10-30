@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cal
 
-## Getting Started
+A phone-sized calorie tracker. Sign in with Google, photograph a meal or type it, then keep the day's nutrition in Firestore.
 
-First, run the development server:
+The photo is used to estimate the plate and is not stored. Each entry saves the meal name, portion, calories, and the rest of the nutrition facts for that day.
+
+## Run it
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fill `.env.local` from the Firebase console and your OpenAI account. `.env.local` is gitignored. `.env.example` stays empty on purpose.
 
-## Learn More
+1. Create a Firebase web app and copy the `NEXT_PUBLIC_FIREBASE_*` values.
+2. Enable Authentication and turn on Google as the only sign-in provider. Add `localhost` to the authorized domains.
+3. Create a Firestore database and publish [`firestore.rules`](firestore.rules).
+4. Set `OPENAI_API_KEY`. Leave it server-only. Do not prefix it with `NEXT_PUBLIC_`.
 
-To learn more about Next.js, take a look at the following resources:
+Restart `npm run dev` after changing env values.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+On a phone, Google sign-in needs a hostname that is listed in Firebase authorized domains. A raw IP address will not complete sign-in.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Daily goal
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Settings stores a calorie target from 500 to 10,000 kcal on the signed-in account. The ring on Today fills against that number.
